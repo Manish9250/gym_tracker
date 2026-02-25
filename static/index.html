@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Gym Tracker</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <style>
+      body {
+        overscroll-behavior-y: contain;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .pb-safe {
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+      }
+
+      /* iOS Roller CSS */
+      .roller-container {
+        height: 120px; /* Shows exactly 3 items (40px each) */
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+      }
+      .roller-item {
+        height: 40px;
+        scroll-snap-align: center;
+      }
+      .roller-highlight {
+        position: absolute;
+        top: 40px; /* Middle row */
+        height: 40px;
+        width: 100%;
+        border-top: 2px solid rgba(59, 130, 246, 0.5);
+        border-bottom: 2px solid rgba(59, 130, 246, 0.5);
+        background: rgba(59, 130, 246, 0.1);
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-950 text-gray-100 h-[100dvh] w-full overflow-hidden flex flex-col antialiased"
+  >
+    <div
+      id="app"
+      class="w-full max-w-md mx-auto h-full flex flex-col relative shadow-2xl bg-gray-900 overflow-hidden"
+    >
+      <div
+        id="auth-view"
+        class="flex flex-col h-full w-full absolute inset-0 z-50 bg-gray-950 p-6 justify-center items-center"
+      >
+        <i class="fas fa-dumbbell text-6xl text-blue-500 mb-6"></i>
+        <h1 class="text-3xl font-bold mb-8">Gym Tracker</h1>
+        <div class="w-full space-y-4">
+          <input
+            type="text"
+            id="username"
+            placeholder="Username"
+            class="w-full p-4 bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="password"
+            id="password"
+            placeholder="Password"
+            class="w-full p-4 bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div class="flex gap-4 mt-6">
+            <button
+              onclick="handleAuth('login')"
+              class="flex-1 bg-blue-600 font-bold py-4 rounded-xl active:scale-95"
+            >
+              Login
+            </button>
+            <button
+              onclick="handleAuth('register')"
+              class="flex-1 bg-gray-700 font-bold py-4 rounded-xl active:scale-95"
+            >
+              Register
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <nav
+        id="bottom-nav"
+        class="hidden absolute bottom-0 w-full bg-gray-900 border-t border-gray-800 z-30 flex justify-around pb-safe pt-3"
+      >
+        <button
+          onclick="switchTab('builder')"
+          class="text-blue-500 flex flex-col items-center gap-1 w-1/2 nav-btn"
+          id="nav-builder"
+        >
+          <i class="fas fa-list text-xl"></i
+          ><span class="text-xs font-bold">Workout</span>
+        </button>
+        <button
+          onclick="switchTab('stats')"
+          class="text-gray-400 flex flex-col items-center gap-1 w-1/2 nav-btn"
+          id="nav-stats"
+        >
+          <i class="fas fa-chart-line text-xl"></i
+          ><span class="text-xs font-bold">Stats</span>
+        </button>
+      </nav>
+
+      <div
+        id="builder-view"
+        class="hidden flex-col h-full w-full absolute inset-0 z-10 pb-20 overflow-y-auto no-scrollbar"
+      >
+        <header
+          class="p-5 pb-2 bg-gray-900/80 backdrop-blur-md sticky top-0 z-20 border-b border-gray-800"
+        >
+          <h1 class="text-2xl font-bold text-white">Today's Split</h1>
+          <p class="text-sm text-blue-400 font-bold mt-1" id="date-display"></p>
+        </header>
+
+        <div class="p-4 space-y-4">
+          <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+            <button
+              onclick="quickAdd('Chest')"
+              class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm font-bold whitespace-nowrap active:bg-gray-700"
+            >
+              Chest
+            </button>
+            <button
+              onclick="quickAdd('Back')"
+              class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm font-bold whitespace-nowrap active:bg-gray-700"
+            >
+              Back
+            </button>
+            <button
+              onclick="quickAdd('Legs')"
+              class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm font-bold whitespace-nowrap active:bg-gray-700"
+            >
+              Legs
+            </button>
+            <button
+              onclick="quickAdd('Shoulders')"
+              class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm font-bold whitespace-nowrap active:bg-gray-700"
+            >
+              Shoulders
+            </button>
+            <button
+              onclick="quickAdd('Arms')"
+              class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm font-bold whitespace-nowrap active:bg-gray-700"
+            >
+              Arms
+            </button>
+          </div>
+
+          <div
+            class="min-h-[100px] border-2 border-dashed border-gray-800 rounded-xl p-2 flex flex-col justify-center relative"
+          >
+            <div
+              id="empty-state"
+              class="text-center text-gray-500 text-sm py-4"
+            >
+              Routine is empty.<br />Add exercises below.
+            </div>
+
+            <ul id="exercise-list" class="space-y-3"></ul>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              onclick="openLibraryModal()"
+              class="flex-1 bg-gray-800 border border-gray-700 py-3 rounded-xl font-bold text-sm text-blue-400 active:scale-95 transition"
+            >
+              <i class="fas fa-search mr-2"></i> Browse
+            </button>
+            <button
+              onclick="openCustomModal()"
+              class="flex-1 bg-gray-800 border border-gray-700 py-3 rounded-xl font-bold text-sm text-green-400 active:scale-95 transition"
+            >
+              <i class="fas fa-plus mr-2"></i> Custom
+            </button>
+          </div>
+
+          <button
+            onclick="startWorkout()"
+            class="w-full bg-blue-600 active:bg-blue-700 text-white font-bold text-lg rounded-2xl py-4 shadow-lg active:scale-95 mt-4 flex items-center justify-center gap-2"
+          >
+            <i class="fas fa-play"></i> Start Workout
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="stats-view"
+        class="hidden h-full w-full absolute inset-0 z-10"
+      ></div>
+
+      <div
+        id="session-view"
+        class="hidden flex-col h-full w-full absolute inset-0 z-40 bg-gray-950"
+      >
+        <header
+          class="p-4 flex justify-between items-center border-b border-gray-800 bg-gray-900"
+        >
+          <button onclick="cancelWorkout()" class="text-red-400 p-2">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+          <div
+            class="font-mono text-xl font-bold text-blue-400"
+            id="global-timer"
+          >
+            00:00
+          </div>
+          <button
+            onclick="finishWorkout()"
+            class="text-green-400 font-bold px-3 py-1 bg-green-900/30 rounded-lg"
+          >
+            Finish
+          </button>
+        </header>
+        <div
+          class="swiper mySwiper flex-1 min-h-0 overflow-hidden w-full h-full"
+        >
+          <div class="swiper-wrapper" id="session-swiper-wrapper"></div>
+        </div>
+      </div>
+
+      <div
+        id="rest-modal"
+        class="hidden absolute inset-0 z-50 bg-gray-950/95 backdrop-blur-md flex flex-col items-center justify-center"
+      >
+        <h2
+          class="text-2xl text-gray-400 mb-4 font-bold tracking-widest uppercase"
+        >
+          Rest
+        </h2>
+        <div
+          id="rest-timer-display"
+          class="text-7xl font-mono font-bold text-white mb-12 transition-colors duration-300"
+        >
+          02:00
+        </div>
+        <button
+          onclick="skipRest()"
+          class="bg-gray-800 text-white w-3/4 py-5 rounded-2xl text-xl font-bold active:bg-gray-700 shadow-xl border border-gray-700"
+        >
+          NEXT SET
+        </button>
+      </div>
+
+      <div
+        id="library-modal"
+        class="hidden fixed inset-0 z-50 bg-gray-950 flex flex-col translate-y-full transition-transform duration-300"
+      >
+        <header
+          class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900"
+        >
+          <h2 class="text-xl font-bold">Add Exercise</h2>
+          <button
+            onclick="closeLibraryModal()"
+            class="text-gray-400 text-3xl font-light"
+          >
+            &times;
+          </button>
+        </header>
+        <div
+          id="body-parts-grid"
+          class="p-4 grid grid-cols-2 gap-3 overflow-y-auto no-scrollbar"
+        ></div>
+        <div
+          id="library-exercises-list"
+          class="hidden p-4 flex-1 overflow-y-auto no-scrollbar space-y-2"
+        >
+          <button
+            onclick="backToBodyParts()"
+            class="text-blue-400 mb-4 text-sm font-bold flex items-center gap-2"
+          >
+            <i class="fas fa-arrow-left"></i> Back to Muscles
+          </button>
+          <div id="filtered-exercises" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <div
+        id="custom-modal"
+        class="hidden fixed inset-0 z-50 bg-gray-950/90 backdrop-blur-sm flex justify-center items-center p-4"
+      >
+        <div
+          class="bg-gray-900 w-full rounded-2xl border border-gray-800 p-5 shadow-2xl"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-white">Custom Exercise</h2>
+            <button onclick="closeCustomModal()" class="text-gray-400 text-2xl">
+              &times;
+            </button>
+          </div>
+          <input
+            type="text"
+            id="new-ex-name"
+            placeholder="Exercise Name"
+            class="w-full p-4 mb-3 bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          />
+          <input
+            type="text"
+            id="new-ex-muscle"
+            placeholder="Muscle Group (e.g., Chest)"
+            class="w-full p-4 mb-5 bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          />
+          <button
+            onclick="addCustomExercise()"
+            class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl active:scale-95 transition"
+          >
+            Save & Add
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
